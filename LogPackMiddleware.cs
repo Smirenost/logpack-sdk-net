@@ -201,10 +201,17 @@ namespace FeatureNinjas.LogPack
             using var streamWriter = new StreamWriter(entryStream);
 
             // write the context
-            streamWriter.WriteLine($"Request.Protocol: {context.Request.Protocol}");
-            streamWriter.WriteLine($"Request.Method:   {context.Request.Method}");
-            streamWriter.WriteLine($"Request.Path:     {context.Request.Path.ToString()}");
+            streamWriter.WriteLine($"{context.Request.Protocol} {context.Request.Path.ToString()} {context.Request.Method}");
+            streamWriter.WriteLine($"Host: {context.Request.Host.ToString()}");
             streamWriter.WriteLine($"Request.Query:    {context.Request.QueryString}");
+            foreach (var requestHeader in context.Request.Headers)
+            {
+                streamWriter.WriteLine($"{requestHeader.Key}: {requestHeader.Value}");
+            }
+            
+            // get the request body
+            var body = new StreamReader(context.Request.Body).ReadToEnd();
+            streamWriter.WriteLine(body);
 
             // close the stream
             streamWriter.Dispose();
