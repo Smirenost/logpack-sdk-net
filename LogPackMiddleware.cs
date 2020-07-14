@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using FeatureNinjas.LogPack.Utilities.Helpers;
 using Microsoft.AspNetCore.Http;
 
 namespace FeatureNinjas.LogPack
@@ -104,7 +105,8 @@ namespace FeatureNinjas.LogPack
             archive.Dispose();
 
             // write the zip file
-            var fileName = $"logpack-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}.zip";
+            var rnd = RandomStringGenerator.RandomString(6);
+            var fileName = $"logpack-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{rnd}.zip";
             using var fileStream = new FileStream(fileName, FileMode.Create);
             stream.Seek(0, SeekOrigin.Begin);
             await stream.CopyToAsync(fileStream);
