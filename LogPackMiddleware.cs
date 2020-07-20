@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
 using Microsoft.AspNetCore.Http;
@@ -97,6 +98,9 @@ namespace FeatureNinjas.LogPack
 
             // write the context
             CreateFileForHttpContext(archive, context);
+            
+            // write dependencies
+            CreateFileForDependencies(archive, context);
 
             // add files
             await AddFiles(archive);
@@ -190,7 +194,7 @@ namespace FeatureNinjas.LogPack
             entryStream.Dispose();
         }
 
-        private void CreateFileForHttpContext(ZipArchive archive, HttpContext context)
+        private async Task CreateFileForHttpContext(ZipArchive archive, HttpContext context)
         {
             if (context == null)
                 return;
@@ -210,8 +214,35 @@ namespace FeatureNinjas.LogPack
             }
             
             // get the request body
-            var body = new StreamReader(context.Request.Body).ReadToEnd();
+            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
             streamWriter.WriteLine(body);
+
+            // close the stream
+            streamWriter.Dispose();
+            entryStream.Dispose();
+        }
+
+        private async Task CreateFileForDependencies(ZipArchive archive, HttpContext context)
+        {
+            if (context == null)
+                return;
+
+            var programAssembly = _options.ProgramType.Assembly;
+            if (programAssembly == null)
+                return;
+            
+            // setup the stream
+            var file = archive.CreateEntry("deps.log");
+            using var entryStream = file.Open();
+            using var streamWriter = new StreamWriter(entryStream);
+
+            // write deps to stream
+            streamWriter.WriteLine(programAssembly);
+            var referencedAssemblies = programAssembly.GetReferencedAssemblies();
+            foreach (var referencedAssembly in referencedAssemblies)
+            {
+                streamWriter.WriteLine("  " + referencedAssembly);
+            }
 
             // close the stream
             streamWriter.Dispose();
