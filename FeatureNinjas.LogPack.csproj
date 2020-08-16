@@ -2,6 +2,10 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <PackageVersion>0.1.0</PackageVersion>
+        <Title>LogPack</Title>
+        <Authors>Stephan Arenswald</Authors>
+        <Copyright>FeatureNinjas OÜ</Copyright>
     </PropertyGroup>
 
     <ItemGroup>
