@@ -69,14 +69,3 @@ public class LogPackAccountIdIncludeFilter : IIncludeFilter
 If this include filter is added to the log pack options, then for all requests for the user with the account ID is 1234 or 5678, a log pack is created.
 
 You could even base include filters on feature flags, e.g. by using FeatureNinjas ;).
-
-# Roadmap
-
-The following list contains features that we're planning to implement in the next updates. Help us prioritize by giving us feedback
-
-- Support for NodeJS
-- Add more upload sinks (e.g. OneDrive, AWS, ...)
-- Offer online storage so you don't have to care about FTP or any other service 
-- ...
-
-Missing something? Create an issue or contact us directly.
