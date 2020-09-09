@@ -110,6 +110,9 @@ namespace FeatureNinjas.LogPack
         {
             await using var stream = new MemoryStream();
             using var archive = new ZipArchive(stream, ZipArchiveMode.Create, true);
+            
+            // write .logpack file
+            CreateLogPackFile(archive, context);
 
             // write logs
             CreateFileForLogs(archive, context);
@@ -170,6 +173,28 @@ namespace FeatureNinjas.LogPack
                     entryStream.Dispose();
                 }
             }
+        }
+
+        private void CreateLogPackFile(ZipArchive archive, HttpContext context)
+        {
+            if (context == null)
+                return;
+            
+            // setup the stream
+            var file = archive.CreateEntry(".logpack");
+            using var entryStream = file.Open();
+            using var streamWriter = new StreamWriter(entryStream);
+            
+            // write the file
+            var now = DateTime.Now;
+            streamWriter.WriteLine($"path: {context.Request.Path.ToString()}");
+            streamWriter.WriteLine($"date: {now.ToShortDateString()}");
+            streamWriter.WriteLine($"time: {now.ToShortTimeString()}");
+            streamWriter.WriteLine($"rc: {context.Response.StatusCode}");
+            
+            // close the stream
+            streamWriter.Close();
+            entryStream.Close();
         }
 
         private void CreateFileForLogs(ZipArchive archive, HttpContext context)
