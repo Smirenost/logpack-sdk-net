@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
@@ -51,17 +52,37 @@ namespace FeatureNinjas.LogPack
                     }
                     else
                     {
+                        var createLogPackAfterFilter = false;
+                        
                         // handle include filters
                         foreach (var includeFilter in _options.Include)
                         {
                             if (includeFilter.Include(context))
                             {
                                 LogPackTracer.Tracer.Trace(context.TraceIdentifier, $"Include filter {nameof(includeFilter)} returned true");
-                            
-                                await CreateLogPack(context);
+
+                                createLogPackAfterFilter = true;
                                 break;
                             }
                         }
+                        
+                        // handle exclude filter
+                        if (createLogPackAfterFilter == true)
+                        {
+                            foreach (var excludeFilter in _options.Exclude)
+                            {
+                                if (excludeFilter.Exclude(context))
+                                {
+                                    LogPackTracer.Tracer.Trace(context.TraceIdentifier, $"Exclude filter {nameof(excludeFilter)}");
+    
+                                    createLogPackAfterFilter = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (createLogPackAfterFilter)
+                            await CreateLogPack(context);
                     }
                 }
                 catch (System.Exception e)
