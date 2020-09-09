@@ -153,6 +153,12 @@ namespace FeatureNinjas.LogPack
 
             // delete the local file
             File.Delete(fileName);
+            
+            // send notifications out
+            foreach (var notificationService in _options.NotificationServices)
+            {
+                await notificationService.Send(fileName);
+            }
         }
 
         private async Task AddFiles(ZipArchive archive)

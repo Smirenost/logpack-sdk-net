@@ -12,6 +12,8 @@ namespace FeatureNinjas.LogPack
         
         public IIncludeFilter[] Include { get; set; } = new IIncludeFilter[0];
 
+        public INotificationService[] NotificationServices { get; set; } = new INotificationService[0];
+
         public Type ProgramType { get; set; } = null;
     }
 }
