@@ -8,7 +8,11 @@ namespace FeatureNinjas.LogPack
 
         public LogPackSink[] Sinks { get; set; } = new LogPackSink[0];
         
+        public IExcludeFilter[] Exclude { get; set; } = new IExcludeFilter[0]; 
+        
         public IIncludeFilter[] Include { get; set; } = new IIncludeFilter[0];
+
+        public INotificationService[] NotificationServices { get; set; } = new INotificationService[0];
 
         public Type ProgramType { get; set; } = null;
     }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
@@ -51,17 +52,37 @@ namespace FeatureNinjas.LogPack
                     }
                     else
                     {
+                        var createLogPackAfterFilter = false;
+                        
                         // handle include filters
                         foreach (var includeFilter in _options.Include)
                         {
                             if (includeFilter.Include(context))
                             {
                                 LogPackTracer.Tracer.Trace(context.TraceIdentifier, $"Include filter {nameof(includeFilter)} returned true");
-                            
-                                await CreateLogPack(context);
+
+                                createLogPackAfterFilter = true;
                                 break;
                             }
                         }
+                        
+                        // handle exclude filter
+                        if (createLogPackAfterFilter == true)
+                        {
+                            foreach (var excludeFilter in _options.Exclude)
+                            {
+                                if (excludeFilter.Exclude(context))
+                                {
+                                    LogPackTracer.Tracer.Trace(context.TraceIdentifier, $"Exclude filter {nameof(excludeFilter)}");
+    
+                                    createLogPackAfterFilter = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (createLogPackAfterFilter)
+                            await CreateLogPack(context);
                     }
                 }
                 catch (System.Exception e)
@@ -89,6 +110,9 @@ namespace FeatureNinjas.LogPack
         {
             await using var stream = new MemoryStream();
             using var archive = new ZipArchive(stream, ZipArchiveMode.Create, true);
+            
+            // write .logpack file
+            CreateLogPackFile(archive, context);
 
             // write logs
             CreateFileForLogs(archive, context);
@@ -97,7 +121,7 @@ namespace FeatureNinjas.LogPack
             CreateFileForEnv(archive);
 
             // write the context
-            CreateFileForHttpContext(archive, context);
+            await CreateFileForHttpContext(archive, context);
             
             // write dependencies
             CreateFileForDependencies(archive, context);
@@ -129,6 +153,12 @@ namespace FeatureNinjas.LogPack
 
             // delete the local file
             File.Delete(fileName);
+            
+            // send notifications out
+            foreach (var notificationService in _options.NotificationServices)
+            {
+                await notificationService.Send(fileName);
+            }
         }
 
         private async Task AddFiles(ZipArchive archive)
@@ -149,6 +179,28 @@ namespace FeatureNinjas.LogPack
                     entryStream.Dispose();
                 }
             }
+        }
+
+        private void CreateLogPackFile(ZipArchive archive, HttpContext context)
+        {
+            if (context == null)
+                return;
+            
+            // setup the stream
+            var file = archive.CreateEntry(".logpack");
+            using var entryStream = file.Open();
+            using var streamWriter = new StreamWriter(entryStream);
+            
+            // write the file
+            var now = DateTime.Now;
+            streamWriter.WriteLine($"path: {context.Request.Path.ToString()}");
+            streamWriter.WriteLine($"date: {now.ToShortDateString()}");
+            streamWriter.WriteLine($"time: {now.ToShortTimeString()}");
+            streamWriter.WriteLine($"rc: {context.Response.StatusCode}");
+            
+            // close the stream
+            streamWriter.Close();
+            entryStream.Close();
         }
 
         private void CreateFileForLogs(ZipArchive archive, HttpContext context)
@@ -223,7 +275,7 @@ namespace FeatureNinjas.LogPack
             entryStream.Dispose();
         }
 
-        private async Task CreateFileForDependencies(ZipArchive archive, HttpContext context)
+        private void CreateFileForDependencies(ZipArchive archive, HttpContext context)
         {
             if (context == null)
                 return;
