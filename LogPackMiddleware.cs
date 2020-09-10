@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
 using Microsoft.AspNetCore.Http;
@@ -112,7 +113,7 @@ namespace FeatureNinjas.LogPack
             using var archive = new ZipArchive(stream, ZipArchiveMode.Create, true);
             
             // write .logpack file
-            CreateLogPackFile(archive, context);
+            var meta = CreateLogPackFile(archive, context);
 
             // write logs
             CreateFileForLogs(archive, context);
@@ -157,7 +158,7 @@ namespace FeatureNinjas.LogPack
             // send notifications out
             foreach (var notificationService in _options.NotificationServices)
             {
-                await notificationService.Send(fileName);
+                await notificationService.Send(fileName, meta);
             }
         }
 
@@ -181,10 +182,10 @@ namespace FeatureNinjas.LogPack
             }
         }
 
-        private void CreateLogPackFile(ZipArchive archive, HttpContext context)
+        private string CreateLogPackFile(ZipArchive archive, HttpContext context)
         {
             if (context == null)
-                return;
+                return "context is null";
             
             // setup the stream
             var file = archive.CreateEntry(".logpack");
@@ -193,14 +194,18 @@ namespace FeatureNinjas.LogPack
             
             // write the file
             var now = DateTime.Now;
-            streamWriter.WriteLine($"path: {context.Request.Path.ToString()}");
-            streamWriter.WriteLine($"date: {now.ToShortDateString()}");
-            streamWriter.WriteLine($"time: {now.ToShortTimeString()}");
-            streamWriter.WriteLine($"rc: {context.Response.StatusCode}");
+            var meta = new StringBuilder();
+            meta.AppendLine($"path: {context.Request.Path.ToString()}");
+            meta.AppendLine($"date: {now.ToShortDateString()}");
+            meta.AppendLine($"time: {now.ToShortTimeString()}");
+            meta.AppendLine($"rc: {context.Response.StatusCode}");
+            streamWriter.WriteLine(meta);
             
             // close the stream
             streamWriter.Close();
             entryStream.Close();
+
+            return meta.ToString();
         }
 
         private void CreateFileForLogs(ZipArchive archive, HttpContext context)

@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
@@ -21,13 +22,15 @@ namespace FeatureNinjas.LogPack.NotifcationServices
             _password = password;
         }
         
-        public Task Send(string logPackName)
+        public Task Send(string logPackName, string meta)
         {
             var client = new SmtpClient(_server);
             client.UseDefaultCredentials = false;
             client.Credentials = new NetworkCredential(_username, _password);
 
             var body = $"New LogPack uploaded. Check!: {logPackName}";
+            body += "/n/n";
+            body += meta;
 
             var message = new MailMessage();
             message.From = new MailAddress(_from);

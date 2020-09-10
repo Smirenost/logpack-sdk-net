@@ -6,6 +6,7 @@
         <Title>LogPack</Title>
         <Authors>Stephan Arenswald</Authors>
         <Copyright>FeatureNinjas OÜ</Copyright>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
