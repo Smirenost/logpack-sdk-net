@@ -121,7 +121,7 @@ namespace FeatureNinjas.LogPack
             CreateFileForEnv(archive);
 
             // write the context
-            CreateFileForHttpContext(archive, context);
+            await CreateFileForHttpContext(archive, context);
             
             // write dependencies
             CreateFileForDependencies(archive, context);
@@ -275,7 +275,7 @@ namespace FeatureNinjas.LogPack
             entryStream.Dispose();
         }
 
-        private async Task CreateFileForDependencies(ZipArchive archive, HttpContext context)
+        private void CreateFileForDependencies(ZipArchive archive, HttpContext context)
         {
             if (context == null)
                 return;

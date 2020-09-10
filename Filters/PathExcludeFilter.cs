@@ -11,6 +11,7 @@ namespace FeatureNinjas.LogPack.Filters
         public PathExcludeFilter(string path, bool isCaseSensitive)
         {
             _path = path;
+            _isCaseSensitive = isCaseSensitive;
         }
 
         public bool Exclude(HttpContext context)
