@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 
-namespace FeatureNinjas.LogPack.NotifcationServices
+namespace FeatureNinjas.LogPack.NotificationServices
 {
     public class EmailNotificationService : INotificationService
     {

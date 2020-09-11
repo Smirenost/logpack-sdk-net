@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FeatureNinjas.LogPack.NotifcationServices
+namespace FeatureNinjas.LogPack.NotificationServices
 {
     public class TelegramNotificationService : INotificationService
     {
