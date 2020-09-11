@@ -29,7 +29,7 @@ namespace FeatureNinjas.LogPack.NotifcationServices
             client.Credentials = new NetworkCredential(_username, _password);
 
             var body = $"New LogPack uploaded. Check!: {logPackName}";
-            body += "/n/n";
+            body += "\n\n";
             body += meta;
 
             var message = new MailMessage();
