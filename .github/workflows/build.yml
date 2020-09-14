@@ -1,4 +1,4 @@
-name: Build for NuGet
+name: CI Build
 
 on:
   push:
