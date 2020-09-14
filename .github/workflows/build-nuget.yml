@@ -65,7 +65,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Pack
         run: |
-          echo "dotnet pack /p:PackageVersion='${{ steps.gitversion.outputs.semVer }}' /p:AssemblyVersion='${{ steps.gitversion.outputs.AssemblySemVer }}' /p:FileVersion='${{ steps.gitversion.outputs.AssemblySemFileVer }}' /p:InformationalVersion='${{ steps.gitversion.outputs.InformationalVersion }}' /p:Version='$(mainVersion)' -c Release" 
-          dotnet pack /p:PackageVersion='${{ steps.gitversion.outputs.semVer }}' /p:AssemblyVersion='${{ steps.gitversion.outputs.AssemblySemVer }}' /p:FileVersion='${{ steps.gitversion.outputs.AssemblySemFileVer }}' /p:InformationalVersion='${{ steps.gitversion.outputs.InformationalVersion }}' /p:Version='$(mainVersion)' -c Release
+          echo "dotnet pack /p:PackageVersion='${{ steps.gitversion.outputs.semVer }}' /p:AssemblyVersion='${{ steps.gitversion.outputs.AssemblySemVer }}' /p:FileVersion='${{ steps.gitversion.outputs.AssemblySemFileVer }}' /p:InformationalVersion='${{ steps.gitversion.outputs.InformationalVersion }}' /p:Version='${{ steps.gitversion.outputs.semVer }}' -c Release" 
+          dotnet pack /p:PackageVersion='${{ steps.gitversion.outputs.semVer }}' /p:AssemblyVersion='${{ steps.gitversion.outputs.AssemblySemVer }}' /p:FileVersion='${{ steps.gitversion.outputs.AssemblySemFileVer }}' /p:InformationalVersion='${{ steps.gitversion.outputs.InformationalVersion }}' /p:Version='${{ steps.gitversion.outputs.semVer }}' -c Release
       - name: Test
         run: dotnet test --no-restore --verbosity normal
