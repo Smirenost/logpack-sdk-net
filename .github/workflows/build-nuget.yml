@@ -1,10 +1,11 @@
-name: .NET Core
+name: Build for NuGet
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow-dispatch:
 
 jobs:
   build:
