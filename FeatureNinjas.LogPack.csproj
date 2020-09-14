@@ -4,9 +4,12 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <PackageVersion>0.2.0</PackageVersion>
         <Title>LogPack</Title>
-        <Authors>Stephan Arenswald</Authors>
         <Copyright>FeatureNinjas OÜ</Copyright>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        
+        <PackageId>FeatureNinjas.LogPack</PackageId>
+        <Version>0.2.0</Version>
+        <Authors>Stephan Arenswald</Authors>
+        <Company>FeatureNinjas OÜ</Company>
     </PropertyGroup>
 
     <ItemGroup>
