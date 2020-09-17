@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
 namespace FeatureNinjas.LogPack
 {
@@ -126,6 +127,12 @@ namespace FeatureNinjas.LogPack
             
             // write dependencies
             CreateFileForDependencies(archive, context);
+            
+            // add response in case enabled by the user
+            if (_options.IncludeResponse)
+            {
+                await CreateFileForResponse(archive, context);
+            }
 
             // add files
             await AddFiles(archive);
@@ -272,10 +279,45 @@ namespace FeatureNinjas.LogPack
             }
             
             // get the request body
-            if (_options.IncludePayload)
+            if (_options.IncludeRequestPayload)
             {
                 string body = null;
                 using (var reader = new StreamReader(context.Request.Body))
+                {
+                    body = await reader.ReadToEndAsync();
+                }
+                streamWriter.WriteLine(body);
+            }
+            
+            // close the stream
+            streamWriter.Dispose();
+            entryStream.Dispose();
+        }
+        
+        private async Task CreateFileForResponse(ZipArchive archive, HttpContext context)
+        {
+            if (context == null)
+                return;
+
+            // setup the stream
+            var file = archive.CreateEntry("response");
+            using var entryStream = file.Open();
+            using var streamWriter = new StreamWriter(entryStream);
+            
+            // write some response info
+            streamWriter.WriteLine($"statusCode: {context.Response.StatusCode}");
+
+            // write the context
+            foreach (var requestHeader in context.Response.Headers)
+            {
+                streamWriter.WriteLine($"{requestHeader.Key}: {requestHeader.Value}");
+            }
+            
+            // get the request body
+            if (_options.IncludeResponsePayload)
+            {
+                string body = null;
+                using (var reader = new StreamReader(context.Response.Body))
                 {
                     body = await reader.ReadToEndAsync();
                 }

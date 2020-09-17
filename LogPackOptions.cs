@@ -16,6 +16,10 @@ namespace FeatureNinjas.LogPack
 
         public Type ProgramType { get; set; } = null;
 
-        public bool IncludePayload { get; set; } = false;
+        public bool IncludeRequestPayload { get; set; } = false;
+
+        public bool IncludeResponse { get; set; } = false;
+
+        public bool IncludeResponsePayload { get; set; } = false;
     }
 }
