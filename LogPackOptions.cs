@@ -15,5 +15,7 @@ namespace FeatureNinjas.LogPack
         public INotificationService[] NotificationServices { get; set; } = new INotificationService[0];
 
         public Type ProgramType { get; set; } = null;
+
+        public bool IncludePayload { get; set; } = false;
     }
 }

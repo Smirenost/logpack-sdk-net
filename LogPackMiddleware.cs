@@ -272,9 +272,16 @@ namespace FeatureNinjas.LogPack
             }
             
             // get the request body
-            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            streamWriter.WriteLine(body);
-
+            if (_options.IncludePayload)
+            {
+                string body = null;
+                using (var reader = new StreamReader(context.Request.Body))
+                {
+                    body = await reader.ReadToEndAsync();
+                }
+                streamWriter.WriteLine(body);
+            }
+            
             // close the stream
             streamWriter.Dispose();
             entryStream.Dispose();
