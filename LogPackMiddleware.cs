@@ -143,7 +143,7 @@ namespace FeatureNinjas.LogPack
             // write the zip file
             var rnd = RandomStringGenerator.RandomString(6);
             var sc = context.Response == null ? 0 : context.Response.StatusCode;
-            var fileName = $"logpack-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{sc}-{rnd}.zip";
+            var fileName = $"logpack-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{sc}-{rnd}.logpack";
             using var fileStream = new FileStream(fileName, FileMode.Create);
             stream.Seek(0, SeekOrigin.Begin);
             await stream.CopyToAsync(fileStream);
