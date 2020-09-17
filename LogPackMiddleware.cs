@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileSystemGlobbing.Internal.PatternContexts;
 
 namespace FeatureNinjas.LogPack
 {
@@ -94,7 +95,7 @@ namespace FeatureNinjas.LogPack
                     if (e.StackTrace != null)
                         LogPackTracer.Tracer.Trace(context.TraceIdentifier, e.StackTrace);
 
-                    await CreateLogPack(context);
+                    // creating the logpack failed, don"t call that again
                 }
                 finally
                 {
@@ -279,9 +280,10 @@ namespace FeatureNinjas.LogPack
             }
             
             // get the request body
-            if (_options.IncludeRequestPayload)
+            if (_options.IncludeRequestPayload && context.Request.Body.CanRead)
             {
                 string body = null;
+                context.Request.Body.Position = 0;
                 using (var reader = new StreamReader(context.Request.Body))
                 {
                     body = await reader.ReadToEndAsync();
@@ -314,7 +316,7 @@ namespace FeatureNinjas.LogPack
             }
             
             // get the request body
-            if (_options.IncludeResponsePayload)
+            if (_options.IncludeResponsePayload && context.Response.Body.CanRead)
             {
                 string body = null;
                 using (var reader = new StreamReader(context.Response.Body))
