@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using FeatureNinjas.LogPack.Utilities.Helpers;
@@ -57,6 +58,28 @@ namespace FeatureNinjas.LogPack
             httpContext.Request.Body = body;
         }
 
+        private async Task ReadResponseBody(HttpContext httpContext)
+        {
+            // The reponse body is also a stream so we need to:
+            // - hold a reference to the original response body stream
+            // - re-point the response body to a new memory stream
+            // - read the response body after the request is handled into our memory stream
+            // - copy the response in the memory stream out to the original response stream
+            using (var responseBodyMemoryStream = new MemoryStream())
+            {
+                var originalResponseBodyReference = httpContext.Response.Body;
+                httpContext.Response.Body = responseBodyMemoryStream;
+
+                await _next(httpContext);
+
+                httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+                var responseBody = await new StreamReader(httpContext.Response.Body).ReadToEndAsync();
+                httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+
+                await responseBodyMemoryStream.CopyToAsync(originalResponseBodyReference);
+            }
+        }
+
         public async Task InvokeAsync(HttpContext context)
         {
             try
@@ -68,15 +91,35 @@ namespace FeatureNinjas.LogPack
                     // get the request body first, and reset the stream]
                     await ReadRequestBody(context);
 
-                    // call the next middleware, and afterwards create the logpack
-                    await _next(context);
+                    // The reponse body is also a stream so we need to:
+                    // - hold a reference to the original response body stream
+                    // - re-point the response body to a new memory stream
+                    // - read the response body after the request is handled into our memory stream
+                    // - copy the response in the memory stream out to the original response stream
+                    // based on https://www.carlrippon.com/adding-useful-information-to-asp-net-core-web-api-serilog-logs/
+                    var responseBody = "";
+                    using (var responseBodyMemoryStream = new MemoryStream())
+                    {
+                        var originalResponseBodyReference = context.Response.Body;
+                        context.Response.Body = responseBodyMemoryStream;
 
+                        // call the next middleware, and afterwards create the logpack
+                        await _next(context);
+
+                        context.Response.Body.Seek(0, SeekOrigin.Begin);
+                        responseBody = await new StreamReader(context.Response.Body).ReadToEndAsync();
+                        context.Response.Body.Seek(0, SeekOrigin.Begin);
+
+                        await responseBodyMemoryStream.CopyToAsync(originalResponseBodyReference);
+                    }
+
+                    // all other middlewares run now > check the filters and create a logpack
                     if (context.Response?.StatusCode >= 500 && context.Response?.StatusCode < 600)
                     {
                         // handle error codes
                         LogPackTracer.Tracer.Trace(context.TraceIdentifier, "Called middleware returned status code 5xx");
 
-                        await CreateLogPack(context);
+                        await CreateLogPack(context, responseBody);
                     }
                     else
                     {
@@ -110,7 +153,7 @@ namespace FeatureNinjas.LogPack
                         }
 
                         if (createLogPackAfterFilter)
-                            await CreateLogPack(context);
+                            await CreateLogPack(context, responseBody);
                     }
                 }
                 catch (System.Exception e)
@@ -134,7 +177,7 @@ namespace FeatureNinjas.LogPack
             }
         }
 
-        private async Task CreateLogPack(HttpContext context)
+        private async Task CreateLogPack(HttpContext context, string responseBody)
         {
             await using var stream = new MemoryStream();
             using var archive = new ZipArchive(stream, ZipArchiveMode.Create, true);
@@ -157,7 +200,7 @@ namespace FeatureNinjas.LogPack
             // add response in case enabled by the user
             if (_options.IncludeResponse)
             {
-                await CreateFileForResponse(archive, context);
+                await CreateFileForResponse(archive, context, responseBody);
             }
 
             // add files
@@ -315,7 +358,7 @@ namespace FeatureNinjas.LogPack
             entryStream.Dispose();
         }
         
-        private async Task CreateFileForResponse(ZipArchive archive, HttpContext context)
+        private async Task CreateFileForResponse(ZipArchive archive, HttpContext context, string responseBody)
         {
             if (context == null)
                 return;
@@ -335,14 +378,9 @@ namespace FeatureNinjas.LogPack
             }
             
             // get the request body
-            if (_options.IncludeResponsePayload && context.Response.Body.CanRead)
+            if (_options.IncludeResponsePayload)
             {
-                string body = null;
-                using (var reader = new StreamReader(context.Response.Body))
-                {
-                    body = await reader.ReadToEndAsync();
-                }
-                streamWriter.WriteLine(body);
+                streamWriter.WriteLine(responseBody);
             }
             
             // close the stream
