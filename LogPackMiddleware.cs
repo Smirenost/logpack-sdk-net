@@ -21,6 +21,8 @@ namespace FeatureNinjas.LogPack
         private readonly RequestDelegate _next;
 
         private LogPackOptions _options;
+        
+        private string _requestBody;
 
         #endregion
 
@@ -36,6 +38,25 @@ namespace FeatureNinjas.LogPack
 
         #region Methods
 
+        /// <summary>
+        /// Reads the request body and resets it afterwards again. Based on
+        /// https://www.carlrippon.com/adding-useful-information-to-asp-net-core-web-api-serilog-logs/
+        /// </summary>
+        /// <param name="httpContext"></param>
+        /// <returns></returns>
+        private async Task ReadRequestBody(HttpContext httpContext)
+        {
+            // Getting the request body is a little tricky because it's a stream
+            // So, we need to read the stream and then rewind it back to the beginning
+            httpContext.Request.EnableBuffering();
+            var body = httpContext.Request.Body;
+            var buffer = new byte[Convert.ToInt32(httpContext.Request.ContentLength)];
+            await httpContext.Request.Body.ReadAsync(buffer, 0, buffer.Length);
+            _requestBody = Encoding.UTF8.GetString(buffer);
+            body.Seek(0, SeekOrigin.Begin);
+            httpContext.Request.Body = body;
+        }
+
         public async Task InvokeAsync(HttpContext context)
         {
             try
@@ -44,6 +65,10 @@ namespace FeatureNinjas.LogPack
 
                 try
                 {
+                    // get the request body first, and reset the stream]
+                    await ReadRequestBody(context);
+
+                    // call the next middleware, and afterwards create the logpack
                     await _next(context);
 
                     if (context.Response?.StatusCode >= 500 && context.Response?.StatusCode < 600)
@@ -266,7 +291,7 @@ namespace FeatureNinjas.LogPack
                 return;
 
             // setup the stream
-            var file = archive.CreateEntry("context.log");
+            var file = archive.CreateEntry("request");
             using var entryStream = file.Open();
             using var streamWriter = new StreamWriter(entryStream);
 
@@ -282,13 +307,7 @@ namespace FeatureNinjas.LogPack
             // get the request body
             if (_options.IncludeRequestPayload && context.Request.Body.CanRead)
             {
-                string body = null;
-                context.Request.Body.Position = 0;
-                using (var reader = new StreamReader(context.Request.Body))
-                {
-                    body = await reader.ReadToEndAsync();
-                }
-                streamWriter.WriteLine(body);
+                streamWriter.WriteLine(_requestBody);
             }
             
             // close the stream
