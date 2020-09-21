@@ -44,7 +44,7 @@ namespace FeatureNinjas.LogPack
         /// https://www.carlrippon.com/adding-useful-information-to-asp-net-core-web-api-serilog-logs/
         /// </summary>
         /// <param name="httpContext"></param>
-        /// <returns></returns>
+        /// <returns></retuns>
         private async Task ReadRequestBody(HttpContext httpContext)
         {
             // Getting the request body is a little tricky because it's a stream
@@ -210,9 +210,7 @@ namespace FeatureNinjas.LogPack
             archive.Dispose();
 
             // write the zip file
-            var rnd = RandomStringGenerator.RandomString(6);
-            var sc = context.Response == null ? 0 : context.Response.StatusCode;
-            var fileName = $"logpack-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{sc}-{rnd}.logpack";
+            var fileName = GetLogPackFilename(context);
             using var fileStream = new FileStream(fileName, FileMode.Create);
             stream.Seek(0, SeekOrigin.Begin);
             await stream.CopyToAsync(fileStream);
@@ -413,6 +411,16 @@ namespace FeatureNinjas.LogPack
             // close the stream
             streamWriter.Dispose();
             entryStream.Dispose();
+        }
+
+        private string GetLogPackFilename(HttpContext context)
+        {
+            var timeUtc = DateTime.UtcNow;
+            var time = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, _options.TimeZone);
+            var rnd = RandomStringGenerator.RandomString(6);
+            var sc = context.Response == null ? 0 : context.Response.StatusCode;
+            var filename = $"logpack-{time.ToString("yyyyMMdd-HHmmss")}-{sc}-{rnd}.logpack";
+            return filename;
         }
 
         #endregion

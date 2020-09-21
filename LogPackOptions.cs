@@ -21,5 +21,7 @@ namespace FeatureNinjas.LogPack
         public bool IncludeResponse { get; set; } = false;
 
         public bool IncludeResponsePayload { get; set; } = false;
+
+        public TimeZoneInfo TimeZone { get; set; } = TimeZoneInfo.Utc;
     }
 }
